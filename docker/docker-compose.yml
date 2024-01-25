@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloak_db
+      DB_DATABASE: keycloak
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      KEYCLOAK_LOGLEVEL: DEBUG
+    entrypoint: "/opt/keycloak/bin/kc.sh start-dev"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak_db
+
+  keycloak_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  discourse:
+    image: discourse/discourse_dev:release
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./discourse:/src:delegated
+      - ./discourse_db_data:/shared/postgres_data:delegated"
+      - ./pg_hba.conf:/etc/postgresql/13/main/pg_hba.conf:delegated
+    entrypoint: "/sbin/boot --init"
+    environment:
+      DISCOURSE_HOSTNAME: 'localhost'
+      UNICORN_BIND_ALL: 1
+      ALLOW_EMBER_CLI_PROXY_BYPASS: 1
+      DISCOURSE_DEV_DB: discourse
+    #   DISCOURSE_DEVELOPER_EMAILS: 'your-email@example.com'
+    #   DISCOURSE_SMTP_ADDRESS: 'smtp.example.com'
+    #   DISCOURSE_SMTP_PORT: 587
+    #   DISCOURSE_SMTP_USER_NAME: 'your-smtp-username'
+    #   DISCOURSE_SMTP_PASSWORD: 'your-smtp-password'
+    #   LETSENCRYPT_ACCOUNT_EMAIL: 'your-email@example.com'
+    restart: always
